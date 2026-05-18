@@ -152,7 +152,7 @@ O conector monitora exclusivamente a tabela `outbox_events` e aplica o transform
 
 ### Limpeza automática
 
-Um MySQL Event Scheduler remove registros da `outbox_events` com mais de 7 dias diariamente — o Debezium já terá capturado via binlog bem antes disso.
+Um MySQL Event Scheduler remove registros da `outbox_events` com mais de 7 dias diariamente - o Debezium já terá capturado via binlog bem antes disso.
 
 ### Documentos MongoDB
 
