@@ -1,25 +1,15 @@
-# Estágio 1: Build usando o JDK 25 da Eclipse Temurin (Ubuntu Jammy)
-FROM eclipse-temurin:25-jdk-jammy AS build
+# Estágio 1: Build completo com Maven e Java 21 (Estável e suportado por padrão)
+FROM maven:3.9.6-eclipse-temurin-21 AS build
 WORKDIR /app
-
-# Instala o Maven dentro do container
-RUN apt-get update && apt-get install -y maven
-
 COPY . .
 
-# Localiza o pom.xml, entra na pasta e faz o build com o JDK 25 correto
-RUN POM_PATH=$(find . -name "pom.xml" -print -quit) && \
-    DIR_PATH=$(dirname "$POM_PATH") && \
-    cd "$DIR_PATH" && \
-    mvn clean package -DskipTests && \
-    mkdir -p /app/target_build && \
-    cp target/*.jar /app/target_build/app.jar
+# Comando robusto que entra na pasta interna onde está o código e compila
+RUN cd cqrs-pattern && mvn clean package -DskipTests
 
-# Estágio 2: Execução otimizada usando o JRE do Java 25 da Temurin
-FROM eclipse-temurin:25-jre-jammy
+# Estágio 2: Execução leve e otimizada para o plano Free
+FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
-COPY --from=build /app/target_build/app.jar app.jar
+COPY --from=build /app/cqrs-pattern/target/*.jar app.jar
 EXPOSE 8080
 
-# Restrições de memória para não estourar a cota gratuita do Render
 ENTRYPOINT ["java", "-XX:ActiveProcessorCount=1", "-Xmx300m", "-jar", "app.jar"]
