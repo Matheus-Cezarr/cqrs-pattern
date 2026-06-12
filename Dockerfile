@@ -1,9 +1,13 @@
-# Estágio 1: Build com Maven usando Java 25 para suportar o projeto
-FROM maven:3.9.9-eclipse-temurin-25-alpine AS build
+# Estágio 1: Build usando JDK 25 oficial e instalando o Maven manualmente
+FROM openjdk:25-jdk-slim AS build
 WORKDIR /app
+
+# Instala o Maven dentro do container com OpenJDK 25
+RUN apt-get update && apt-get install -y maven findutils
+
 COPY . .
 
-# Procura onde está o pom.xml dinamicamente, entra na pasta e faz o build
+# Localiza o pom.xml, entra na pasta e força o build com o JDK 25 correto
 RUN POM_PATH=$(find . -name "pom.xml" -print -quit) && \
     DIR_PATH=$(dirname "$POM_PATH") && \
     cd "$DIR_PATH" && \
@@ -11,11 +15,11 @@ RUN POM_PATH=$(find . -name "pom.xml" -print -quit) && \
     mkdir -p /app/target_build && \
     cp target/*.jar /app/target_build/app.jar
 
-# Estágio 2: Execução otimizada para servidores pequenos usando Java 25
-FROM eclipse-temurin:25-jre-alpine
+# Estágio 2: Execução otimizada usando o JRE do OpenJDK 25
+FROM openjdk:25-jdk-slim
 WORKDIR /app
-# Copia o jar final que centralizamos no estágio anterior
 COPY --from=build /app/target_build/app.jar app.jar
 EXPOSE 8080
 
+# Restrições de memória para não estourar a cota gratuita do Render
 ENTRYPOINT ["java", "-XX:ActiveProcessorCount=1", "-Xmx300m", "-jar", "app.jar"]
